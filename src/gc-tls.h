@@ -87,7 +87,7 @@ typedef struct {
 } jl_gc_page_stack_t;
 
 typedef struct {
-    jl_thread_heap_t heap;
+    jl_thread_heap_t heap; // this is very large, and the offset is baked into codegen
     jl_gc_page_stack_t page_metadata_allocd;
     jl_thread_gc_num_t gc_num;
     jl_gc_markqueue_t mark_queue;
