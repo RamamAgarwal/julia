@@ -1154,18 +1154,20 @@
         (parse-atom s))))
 
 (define (parse-def s is-func anon)
-  (let* ((ex  (parse-unary-prefix s))
-         (sig (if (or (and is-func (reserved-word? ex)) (initial-reserved-word? ex))
-                  (error (string "invalid name \"" ex "\""))
-                  (parse-call-chain s ex #f)))
-         (decl-sig
-          (if (and is-func (eq? (peek-token s) '|::|))
-              (begin (take-token s)
-                     `(|::| ,sig ,(parse-call s)))
-              sig)))
-    (if (eq? (peek-token s) 'where)
-        (parse-where-chain s decl-sig)
-        decl-sig)))
+  (let ((ex  (parse-unary-prefix s)))
+    (if (and (pair? ex) (eq? (car ex) 'macrocall))
+      ex
+      (let* ((sig (if (or (and is-func (reserved-word? ex)) (initial-reserved-word? ex))
+                      (error (string "invalid name \"" ex "\""))
+                      (parse-call-chain s ex #f)))
+            (decl-sig
+              (if (and is-func (eq? (peek-token s) '|::|))
+                  (begin (take-token s)
+                        `(|::| ,sig ,(parse-call s)))
+                  sig)))
+        (if (eq? (peek-token s) 'where)
+            (parse-where-chain s decl-sig)
+            decl-sig)))))
 
 (define (disallowed-space-error lno ex t)
   (error (string "space before \"" t "\" not allowed in \""
@@ -1329,7 +1331,8 @@
 
 (define (valid-func-sig? paren sig)
   (and (pair? sig)
-       (or (eq? (car sig) 'call)
+       (or (eq? (car sig) 'macrocall)
+           (eq? (car sig) 'call)
            (eq? (car sig) 'tuple)
            (and paren (eq? (car sig) 'block))
            (and paren (eq? (car sig) '...))
